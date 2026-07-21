@@ -185,6 +185,7 @@
   svg.chart { width: 100%; height: auto; overflow: visible; }
   .hit { cursor: pointer; }
   .hit:hover + .bar { fill: var(--text); }
+  .hit-static { cursor: default; }
   .bar { fill: var(--accent); pointer-events: none; }
   .bar.selected { fill: var(--text); }
   .line-path { fill: none; stroke: var(--accent); stroke-width: 2; }
@@ -285,7 +286,7 @@
 
   <header>
     <div>
-      <h1>Christy W. LaFlamme</h1>
+      <h1>Christy W. LaFlamme, PhD</h1>
       <p class="bio">Postdoctoral Scholar, Division of Medical Genetics, University of Washington</p>
       <nav class="links">
         <a href="https://orcid.org/0000-0002-0808-3475" target="_blank" rel="noopener">ORCID</a>
@@ -410,15 +411,16 @@ function drawBarChart(svg, years, values, tooltipLabel, selectedYear, onSelect) 
     const isSelected = year === selectedYear;
 
     // Full-height transparent hit area so the whole column (and the space above
-    // a short bar) is clickable, not just the coloured bar itself.
+    // a short bar) is the hover/click target, not just the coloured bar itself.
+    const clickable = typeof onSelect === 'function';
     const hit = el('rect', {
       x: colX, y: padT, width: innerW / n, height: innerH + padB,
-      class: 'hit', fill: 'transparent',
+      class: clickable ? 'hit' : 'hit-static', fill: 'transparent',
     });
     hit.addEventListener('mouseenter', (e) => showTooltip(e, `${year}: ${tooltipLabel(v)}`));
     hit.addEventListener('mousemove', moveTooltip);
     hit.addEventListener('mouseleave', hideTooltip);
-    hit.addEventListener('click', () => onSelect(year));
+    if (clickable) hit.addEventListener('click', () => onSelect(year));
     svg.appendChild(hit);
 
     const rect = el('rect', {
@@ -452,17 +454,19 @@ function drawLineChart(svg, years, values, tooltipLabel, selectedYear, onSelect)
     return { x, y, year, v: values[i] };
   });
 
-  // Full-height transparent hit bands so the whole column is clickable.
+  // Full-height transparent hit bands span each column for hover (and click,
+  // when a select handler is provided).
+  const clickable = typeof onSelect === 'function';
   const bandW = n > 1 ? innerW / (n - 1) : innerW;
   points.forEach((p) => {
     const hit = el('rect', {
       x: p.x - bandW / 2, y: padT, width: bandW, height: innerH + padB,
-      class: 'hit', fill: 'transparent',
+      class: clickable ? 'hit' : 'hit-static', fill: 'transparent',
     });
     hit.addEventListener('mouseenter', (e) => showTooltip(e, `${p.year}: ${tooltipLabel(p.v)}`));
     hit.addEventListener('mousemove', moveTooltip);
     hit.addEventListener('mouseleave', hideTooltip);
-    hit.addEventListener('click', () => onSelect(p.year));
+    if (clickable) hit.addEventListener('click', () => onSelect(p.year));
     svg.appendChild(hit);
   });
 
@@ -578,13 +582,15 @@ function render() {
 
   const papersPerYear = years.map(y => filtered.filter(p => p.year === y).length);
 
+  // Citations chart is display-only (hover tooltips, no click-to-filter).
   const citationsSvg = document.getElementById('citations-chart');
   if (citationView === 'peryear') {
-    drawBarChart(citationsSvg, years, citationsPerYear, v => `${v} citation${v === 1 ? '' : 's'}`, selectedYear, selectYear);
+    drawBarChart(citationsSvg, years, citationsPerYear, v => `${v} citation${v === 1 ? '' : 's'}`, null, null);
   } else {
-    drawLineChart(citationsSvg, years, cumulativeCitations, v => `${v} total citation${v === 1 ? '' : 's'}`, selectedYear, selectYear);
+    drawLineChart(citationsSvg, years, cumulativeCitations, v => `${v} total citation${v === 1 ? '' : 's'}`, null, null);
   }
 
+  // Papers-per-year chart drives the year filter.
   drawBarChart(document.getElementById('papers-chart'), years, papersPerYear,
     v => `${v} paper${v === 1 ? '' : 's'}`, selectedYear, selectYear);
 
