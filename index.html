@@ -336,7 +336,11 @@
 
   <section>
     <div class="section-head">
-      <h2>Papers per year</h2>
+      <h2>Papers</h2>
+      <div class="segmented" id="papers-view-toggle">
+        <button data-view="peryear" class="active">Per year</button>
+        <button data-view="cumulative">Cumulative</button>
+      </div>
     </div>
     <div class="chart-card">
       <svg class="chart" id="papers-chart" viewBox="0 0 700 220"></svg>
@@ -345,7 +349,7 @@
 
   <section>
     <div class="section-head">
-      <h2>Papers</h2>
+      <h2>Publications</h2>
       <button class="clear-filter" id="clear-filter">Showing <span id="filter-year"></span> only — clear</button>
     </div>
     <div class="papers" id="papers-list"></div>
@@ -490,6 +494,7 @@ function drawLineChart(svg, years, values, tooltipLabel, selectedYear, onSelect)
 }
 
 let citationView = 'peryear';
+let papersView = 'peryear';
 let selectedYear = null;
 let papers = [];
 
@@ -581,6 +586,8 @@ function render() {
   citationsPerYear.reduce((acc, v, i) => (cumulativeCitations[i] = acc + v), 0);
 
   const papersPerYear = years.map(y => filtered.filter(p => p.year === y).length);
+  const cumulativePapers = [];
+  papersPerYear.reduce((acc, v, i) => (cumulativePapers[i] = acc + v), 0);
 
   // Citations chart is display-only (hover tooltips, no click-to-filter).
   const citationsSvg = document.getElementById('citations-chart');
@@ -590,9 +597,13 @@ function render() {
     drawLineChart(citationsSvg, years, cumulativeCitations, v => `${v} total citation${v === 1 ? '' : 's'}`, null, null);
   }
 
-  // Papers-per-year chart drives the year filter.
-  drawBarChart(document.getElementById('papers-chart'), years, papersPerYear,
-    v => `${v} paper${v === 1 ? '' : 's'}`, selectedYear, selectYear);
+  // Papers chart drives the year filter (both views).
+  const papersSvg = document.getElementById('papers-chart');
+  if (papersView === 'peryear') {
+    drawBarChart(papersSvg, years, papersPerYear, v => `${v} paper${v === 1 ? '' : 's'}`, selectedYear, selectYear);
+  } else {
+    drawLineChart(papersSvg, years, cumulativePapers, v => `${v} total paper${v === 1 ? '' : 's'}`, selectedYear, selectYear);
+  }
 
   document.getElementById('clear-filter').style.display = selectedYear ? 'inline' : 'none';
   document.getElementById('filter-year').textContent = selectedYear || '';
@@ -637,6 +648,13 @@ document.getElementById('citation-view-toggle').addEventListener('click', (e) =>
   if (!btn) return;
   citationView = btn.dataset.view;
   document.querySelectorAll('#citation-view-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+  render();
+});
+document.getElementById('papers-view-toggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  papersView = btn.dataset.view;
+  document.querySelectorAll('#papers-view-toggle button').forEach(b => b.classList.toggle('active', b === btn));
   render();
 });
 document.getElementById('preprint-filter').addEventListener('change', render);
