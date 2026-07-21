@@ -189,6 +189,19 @@
     text-decoration: none;
   }
   .paper-title:hover { color: var(--accent); }
+  .paper-authors {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .paper-authors .me {
+    font-weight: 700;
+    text-decoration: underline;
+    color: var(--text);
+  }
   .paper-meta {
     color: var(--text-muted);
     font-size: 0.88rem;
@@ -232,11 +245,15 @@
   <div class="stats">
     <div class="stat">
       <div class="value" id="stat-papers">–</div>
-      <div class="label">Papers</div>
+      <div class="label" id="label-papers">Papers</div>
     </div>
     <div class="stat">
       <div class="value" id="stat-citations">–</div>
-      <div class="label">Citations</div>
+      <div class="label" id="label-citations">Citations</div>
+    </div>
+    <div class="stat">
+      <div class="value" id="stat-hindex">–</div>
+      <div class="label">h-index</div>
     </div>
   </div>
 
@@ -419,13 +436,74 @@ function selectYear(year) {
   render();
 }
 
+function hIndex(list) {
+  const counts = list.map(p => p.cited_by_count).sort((a, b) => b - a);
+  let h = 0;
+  while (h < counts.length && counts[h] >= h + 1) h++;
+  return h;
+}
+
+const isMe = (name) => /laflamme/i.test(name);
+const esc = (s) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const authorHTML = (name) => isMe(name) ? `<span class="me">${esc(name)}</span>` : esc(name);
+
+let _measureCtx;
+function measureText(text, font) {
+  if (!_measureCtx) _measureCtx = document.createElement('canvas').getContext('2d');
+  _measureCtx.font = font;
+  return _measureCtx.measureText(text).width;
+}
+
+// As many leading authors as fit on one line, then "(...)" and the last author.
+// Christy's name is always kept in view: if she'd otherwise be truncated out of
+// the middle, she's anchored in as "lead... (...) Christy (...) last".
+function buildAuthors(authors, width, font) {
+  if (!authors || authors.length === 0) return '';
+  if (authors.length <= 2 || measureText(authors.join(', '), font) <= width) {
+    return authors.map(authorHTML).join(', ');
+  }
+  const lastIdx = authors.length - 1;
+  const last = authors[lastIdx];
+  const meIdx = authors.findIndex(isMe);
+
+  // Greedy: most leading authors (from the front) that fit alongside `tail`.
+  const leadCount = (tail, cap) => {
+    let count = 1;
+    for (let i = 1; i <= cap; i++) {
+      if (measureText(authors.slice(0, i).join(', ') + tail, font) <= width) count = i;
+      else break;
+    }
+    return count;
+  };
+
+  const simpleCount = leadCount(' (...) ' + last, lastIdx);
+  const sheShows = meIdx === -1 || meIdx === lastIdx || meIdx < simpleCount;
+  if (sheShows) {
+    return `${authors.slice(0, simpleCount).map(authorHTML).join(', ')} (...) ${authorHTML(last)}`;
+  }
+
+  // She's a hidden middle author — anchor her name between the gaps.
+  const tail = ` (...) ${authors[meIdx]} (...) ${last}`;
+  const count = Math.min(leadCount(tail, meIdx), meIdx);
+  return `${authors.slice(0, count).map(authorHTML).join(', ')} (...) ${authorHTML(authors[meIdx])} (...) ${authorHTML(last)}`;
+}
+
 function render() {
   const includePreprints = document.getElementById('preprint-filter').checked;
   const filtered = papers.filter(p => includePreprints || p.type !== 'preprint');
 
-  document.getElementById('stat-papers').textContent = filtered.length;
+  // Top numbers reflect the selected year when one is active; otherwise the totals.
+  const forStats = filtered.filter(p => !selectedYear || p.year === selectedYear);
+  document.getElementById('stat-papers').textContent = forStats.length;
   document.getElementById('stat-citations').textContent =
-    filtered.reduce((sum, p) => sum + p.cited_by_count, 0);
+    forStats.reduce((sum, p) => sum + p.cited_by_count, 0);
+  document.getElementById('label-papers').textContent =
+    selectedYear ? `Papers in ${selectedYear}` : 'Papers';
+  document.getElementById('label-citations').textContent =
+    selectedYear ? `Citations in ${selectedYear}` : 'Citations';
+
+  // h-index is a career metric — fixed regardless of the year or view toggle.
+  document.getElementById('stat-hindex').textContent = hIndex(filtered);
 
   const pubYears = filtered.map(p => p.year).filter(Boolean);
   const citedYears = filtered.flatMap(p => Object.keys(p.counts_by_year).map(Number));
@@ -457,6 +535,12 @@ function render() {
 
   const list = document.getElementById('papers-list');
   list.innerHTML = '';
+
+  // Measure against the list's actual width so the author line fits on one row.
+  const cs = getComputedStyle(list);
+  const authorFont = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const authorWidth = (list.clientWidth || 700) - 4;
+
   filtered
     .filter(p => !selectedYear || p.year === selectedYear)
     .slice()
@@ -465,8 +549,11 @@ function render() {
       const item = document.createElement('div');
       item.className = 'paper';
       const preprintBadge = p.type === 'preprint' ? '<span class="badge">preprint</span>' : '';
+      const authorsLine = buildAuthors(p.authors, authorWidth, authorFont);
+      const authorsHTML = authorsLine ? `<div class="paper-authors">${authorsLine}</div>` : '';
       item.innerHTML = `
         <a class="paper-title" href="${p.link || '#'}" target="_blank" rel="noopener">${p.title}</a>${preprintBadge}
+        ${authorsHTML}
         <div class="paper-meta">${p.venue || 'Unknown venue'} · ${p.year || ''} · ${p.cited_by_count} citation${p.cited_by_count === 1 ? '' : 's'}</div>
       `;
       list.appendChild(item);
@@ -482,6 +569,12 @@ document.getElementById('citation-view-toggle').addEventListener('click', (e) =>
 });
 document.getElementById('preprint-filter').addEventListener('change', render);
 document.getElementById('clear-filter').addEventListener('click', () => { selectedYear = null; render(); });
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 150);
+});
 
 fetch('papers.json')
   .then(r => r.json())
