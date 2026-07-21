@@ -521,9 +521,9 @@ function measureText(text, font) {
   return _measureCtx.measureText(text).width;
 }
 
-// As many leading authors as fit on one line, then "(...)" and the last author.
+// As many leading authors as fit on one line, then "…" and the last author.
 // Christy's name is always kept in view: if she'd otherwise be truncated out of
-// the middle, she's anchored in as "lead... (...) Christy (...) last".
+// the middle, she's anchored in as "lead… … Christy … last".
 function buildAuthors(authors, width, font) {
   if (!authors || authors.length === 0) return '';
   if (authors.length <= 2 || measureText(authors.join(', '), font) <= width) {
@@ -543,16 +543,16 @@ function buildAuthors(authors, width, font) {
     return count;
   };
 
-  const simpleCount = leadCount(' (...) ' + last, lastIdx);
+  const simpleCount = leadCount(' … ' + last, lastIdx);
   const sheShows = meIdx === -1 || meIdx === lastIdx || meIdx < simpleCount;
   if (sheShows) {
-    return `${authors.slice(0, simpleCount).map(authorHTML).join(', ')} (...) ${authorHTML(last)}`;
+    return `${authors.slice(0, simpleCount).map(authorHTML).join(', ')} … ${authorHTML(last)}`;
   }
 
   // She's a hidden middle author — anchor her name between the gaps.
-  const tail = ` (...) ${authors[meIdx]} (...) ${last}`;
+  const tail = ` … ${authors[meIdx]} … ${last}`;
   const count = Math.min(leadCount(tail, meIdx), meIdx);
-  return `${authors.slice(0, count).map(authorHTML).join(', ')} (...) ${authorHTML(authors[meIdx])} (...) ${authorHTML(last)}`;
+  return `${authors.slice(0, count).map(authorHTML).join(', ')} … ${authorHTML(authors[meIdx])} … ${authorHTML(last)}`;
 }
 
 function render() {
