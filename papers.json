@@ -6,9 +6,10 @@
     "type": "article",
     "venue": "Nature Genetics",
     "link": "https://doi.org/10.1038/s41588-026-02547-5",
-    "cited_by_count": 4,
+    "cited_by_count": 12,
     "counts_by_year": {
-      "2026": 4
+      "2026": 10,
+      "2025": 2
     },
     "authors": [
       "Elsa Leit\u00e3o",
@@ -306,12 +307,12 @@
     "type": "article",
     "venue": "Genome biology",
     "link": "https://doi.org/10.1186/s13059-024-03309-4",
-    "cited_by_count": 24,
+    "cited_by_count": 27,
     "counts_by_year": {
       "2026": 9,
-      "2025": 11,
-      "2024": 3,
-      "2023": 1
+      "2025": 12,
+      "2024": 4,
+      "2023": 2
     },
     "authors": [
       "Richard H. Chapple",
@@ -346,11 +347,11 @@
     "type": "article",
     "venue": "Nature Communications",
     "link": "https://doi.org/10.1038/s41467-024-50159-6",
-    "cited_by_count": 24,
+    "cited_by_count": 25,
     "counts_by_year": {
       "2026": 7,
       "2025": 16,
-      "2024": 1
+      "2024": 2
     },
     "authors": [
       "Christy W. LaFlamme",

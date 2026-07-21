@@ -12,11 +12,19 @@ ORCID = "0000-0002-0808-3475"
 MAILTO = "asianflamme@gmail.com"
 BASE = "https://api.openalex.org/works"
 
-# Checked by hand and confirmed not worth keeping on the page — re-excluded on every run.
+# Preprints with a published version already in the list — citations accrued
+# while it was a preprint move over to the published paper, then this entry
+# is dropped. Re-applied on every run; add a new pair here whenever a preprint
+# graduates to a published paper.
+MERGE_PREPRINT_INTO_PUBLISHED = {
+    "https://openalex.org/W4413974933": "https://openalex.org/W7143332237",  # RNU2-2 preprint -> published article
+    "https://openalex.org/W4366088864": "https://openalex.org/W4399796422",  # neuroblastoma preprint -> published article
+    "https://openalex.org/W4387610109": "https://openalex.org/W4401368338",  # methylation preprint -> published article
+}
+
+# Duplicate/non-paper entries with no citations of their own — dropped outright,
+# re-excluded on every run.
 EXCLUDE_IDS = {
-    "https://openalex.org/W4413974933",  # RNU2-2 preprint, published version already included
-    "https://openalex.org/W4366088864",  # neuroblastoma preprint, published version already included
-    "https://openalex.org/W4387610109",  # methylation preprint, published version already included
     "https://openalex.org/W7136096263",  # RNU2-2 paper, duplicate RWTH Aachen repository entry
     "https://openalex.org/W7155032657",  # RNU2-2 paper, duplicate RWTH Aachen repository entry
     "https://openalex.org/W4393093640",  # AACR conference abstract, restates a listed paper
@@ -67,7 +75,16 @@ def main():
             "authors": authors,
         })
 
-    papers = [p for p in papers if p["id"] not in EXCLUDE_IDS]
+    by_id = {p["id"]: p for p in papers}
+    for preprint_id, published_id in MERGE_PREPRINT_INTO_PUBLISHED.items():
+        preprint, published = by_id.get(preprint_id), by_id.get(published_id)
+        if preprint and published:
+            published["cited_by_count"] += preprint["cited_by_count"]
+            for year, count in preprint["counts_by_year"].items():
+                published["counts_by_year"][year] = published["counts_by_year"].get(year, 0) + count
+
+    drop_ids = EXCLUDE_IDS | set(MERGE_PREPRINT_INTO_PUBLISHED.keys())
+    papers = [p for p in papers if p["id"] not in drop_ids]
     papers.sort(key=lambda p: (p["year"] or 0), reverse=True)
 
     with open("papers.json", "w") as f:
