@@ -154,10 +154,13 @@
   svg.chart { width: 100%; height: auto; overflow: visible; }
   .bar { fill: var(--accent); cursor: pointer; }
   .bar:hover { fill: var(--text); }
+  .bar.selected { fill: var(--text); }
   .line-path { fill: none; stroke: var(--accent); stroke-width: 2; }
   .dot { fill: var(--accent); cursor: pointer; }
   .dot:hover { fill: var(--text); }
+  .dot.selected { fill: var(--text); r: 6; }
   .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .axis-label.selected { fill: var(--text); font-weight: 600; }
 
   #tooltip {
     position: fixed;
@@ -201,6 +204,17 @@
     margin-left: 0.4rem;
     vertical-align: middle;
   }
+  .clear-filter {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--accent);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    display: none;
+  }
+  .clear-filter:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -254,7 +268,10 @@
   </section>
 
   <section>
-    <h2>Papers</h2>
+    <div class="controls">
+      <h2 style="margin:0">Papers</h2>
+      <button class="clear-filter" id="clear-filter">Showing <span id="filter-year"></span> only — clear</button>
+    </div>
     <div class="papers" id="papers-list"></div>
   </section>
 
@@ -300,7 +317,7 @@ function el(name, attrs) {
   return node;
 }
 
-function drawBarChart(svg, years, values, tooltipLabel) {
+function drawBarChart(svg, years, values, tooltipLabel, selectedYear, onSelect) {
   svg.innerHTML = '';
   const W = 700, H = 220, padL = 30, padB = 26, padT = 10, padR = 10;
   const innerW = W - padL - padR, innerH = H - padT - padB;
@@ -314,21 +331,29 @@ function drawBarChart(svg, years, values, tooltipLabel) {
     const barH = (v / max) * innerH;
     const x = padL + i * (innerW / n) + gap / 2;
     const y = padT + innerH - barH;
-    const rect = el('rect', { x, y, width: barW, height: Math.max(barH, v > 0 ? 2 : 0), class: 'bar' });
+    const isSelected = year === selectedYear;
+    const rect = el('rect', {
+      x, y, width: barW, height: Math.max(barH, v > 0 ? 2 : 0),
+      class: 'bar' + (isSelected ? ' selected' : ''),
+    });
     rect.addEventListener('mouseenter', (e) => showTooltip(e, `${year}: ${tooltipLabel(v)}`));
     rect.addEventListener('mousemove', moveTooltip);
     rect.addEventListener('mouseleave', hideTooltip);
+    rect.addEventListener('click', () => onSelect(year));
     svg.appendChild(rect);
 
     if (n <= 12 || i % Math.ceil(n / 12) === 0) {
-      const label = el('text', { x: x + barW / 2, y: H - 6, 'text-anchor': 'middle', class: 'axis-label' });
+      const label = el('text', {
+        x: x + barW / 2, y: H - 6, 'text-anchor': 'middle',
+        class: 'axis-label' + (isSelected ? ' selected' : ''),
+      });
       label.textContent = year;
       svg.appendChild(label);
     }
   });
 }
 
-function drawLineChart(svg, years, values, tooltipLabel) {
+function drawLineChart(svg, years, values, tooltipLabel, selectedYear, onSelect) {
   svg.innerHTML = '';
   const W = 700, H = 220, padL = 30, padB = 26, padT = 10, padR = 10;
   const innerW = W - padL - padR, innerH = H - padT - padB;
@@ -346,14 +371,19 @@ function drawLineChart(svg, years, values, tooltipLabel) {
   svg.appendChild(el('path', { d, class: 'line-path' }));
 
   points.forEach((p, i) => {
-    const dot = el('circle', { cx: p.x, cy: p.y, r: 4, class: 'dot' });
+    const isSelected = p.year === selectedYear;
+    const dot = el('circle', { cx: p.x, cy: p.y, r: isSelected ? 6 : 4, class: 'dot' + (isSelected ? ' selected' : '') });
     dot.addEventListener('mouseenter', (e) => showTooltip(e, `${p.year}: ${tooltipLabel(p.v)}`));
     dot.addEventListener('mousemove', moveTooltip);
     dot.addEventListener('mouseleave', hideTooltip);
+    dot.addEventListener('click', () => onSelect(p.year));
     svg.appendChild(dot);
 
     if (n <= 12 || i % Math.ceil(n / 12) === 0) {
-      const label = el('text', { x: p.x, y: H - 6, 'text-anchor': 'middle', class: 'axis-label' });
+      const label = el('text', {
+        x: p.x, y: H - 6, 'text-anchor': 'middle',
+        class: 'axis-label' + (isSelected ? ' selected' : ''),
+      });
       label.textContent = p.year;
       svg.appendChild(label);
     }
@@ -361,7 +391,13 @@ function drawLineChart(svg, years, values, tooltipLabel) {
 }
 
 let citationView = 'peryear';
+let selectedYear = null;
 let papers = [];
+
+function selectYear(year) {
+  selectedYear = selectedYear === year ? null : year;
+  render();
+}
 
 function render() {
   const includePreprints = document.getElementById('preprint-filter').checked;
@@ -388,17 +424,21 @@ function render() {
 
   const citationsSvg = document.getElementById('citations-chart');
   if (citationView === 'peryear') {
-    drawBarChart(citationsSvg, years, citationsPerYear, v => `${v} citation${v === 1 ? '' : 's'}`);
+    drawBarChart(citationsSvg, years, citationsPerYear, v => `${v} citation${v === 1 ? '' : 's'}`, selectedYear, selectYear);
   } else {
-    drawLineChart(citationsSvg, years, cumulativeCitations, v => `${v} total citation${v === 1 ? '' : 's'}`);
+    drawLineChart(citationsSvg, years, cumulativeCitations, v => `${v} total citation${v === 1 ? '' : 's'}`, selectedYear, selectYear);
   }
 
   drawBarChart(document.getElementById('papers-chart'), years, papersPerYear,
-    v => `${v} paper${v === 1 ? '' : 's'}`);
+    v => `${v} paper${v === 1 ? '' : 's'}`, selectedYear, selectYear);
+
+  document.getElementById('clear-filter').style.display = selectedYear ? 'inline' : 'none';
+  document.getElementById('filter-year').textContent = selectedYear || '';
 
   const list = document.getElementById('papers-list');
   list.innerHTML = '';
   filtered
+    .filter(p => !selectedYear || p.year === selectedYear)
     .slice()
     .sort((a, b) => (b.year || 0) - (a.year || 0))
     .forEach(p => {
@@ -421,6 +461,7 @@ document.getElementById('citation-view-toggle').addEventListener('click', (e) =>
   render();
 });
 document.getElementById('preprint-filter').addEventListener('change', render);
+document.getElementById('clear-filter').addEventListener('click', () => { selectedYear = null; render(); });
 
 fetch('papers.json')
   .then(r => r.json())
