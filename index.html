@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Christy LaFlamme — Publications</title>
+<style>
+  :root {
+    --accent: #0d9488;
+    --accent-soft: #0d948822;
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --border: #e5e5e5;
+    --card-bg: #fafafa;
+  }
+  :root[data-theme="dark"] {
+    --bg: #16191a;
+    --text: #e9e9e9;
+    --text-muted: #9a9a9a;
+    --border: #2e3335;
+    --card-bg: #1e2224;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16191a;
+      --text: #e9e9e9;
+      --text-muted: #9a9a9a;
+      --border: #2e3335;
+      --card-bg: #1e2224;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+  }
+  .bio {
+    color: var(--text-muted);
+    margin: 0 0 0.5rem;
+    font-size: 0.98rem;
+  }
+  .orcid-link {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .orcid-link:hover { text-decoration: underline; }
+
+  #theme-toggle {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    border-radius: 999px;
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #theme-toggle:hover { border-color: var(--accent); }
+
+  .stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  .stat {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+  }
+  .stat .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat .label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .filter {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .segmented {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .segmented button {
+    border: none;
+    background: var(--card-bg);
+    color: var(--text-muted);
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .segmented button.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  section { margin-bottom: 2.5rem; }
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.9rem;
+  }
+
+  .chart-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.1rem 0.6rem;
+  }
+  svg.chart { width: 100%; height: auto; overflow: visible; }
+  .bar { fill: var(--accent); cursor: pointer; }
+  .bar:hover { fill: var(--text); }
+  .line-path { fill: none; stroke: var(--accent); stroke-width: 2; }
+  .dot { fill: var(--accent); cursor: pointer; }
+  .dot:hover { fill: var(--text); }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--text);
+    color: var(--bg);
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    opacity: 0;
+    transform: translate(-50%, -130%);
+    white-space: nowrap;
+    z-index: 10;
+    transition: opacity 0.08s;
+  }
+
+  .papers { display: flex; flex-direction: column; gap: 1rem; }
+  .paper {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .paper:last-child { border-bottom: none; }
+  .paper-title {
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .paper-title:hover { color: var(--accent); }
+  .paper-meta {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin-top: 0.2rem;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>Christy LaFlamme</h1>
+      <p class="bio">Postdoctoral Scholar, Division of Medical Genetics, University of Washington</p>
+      <a class="orcid-link" href="https://orcid.org/0000-0002-0808-3475" target="_blank" rel="noopener">ORCID: 0000-0002-0808-3475</a>
+    </div>
+    <button id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="value" id="stat-papers">–</div>
+      <div class="label">Papers</div>
+    </div>
+    <div class="stat">
+      <div class="value" id="stat-citations">–</div>
+      <div class="label">Citations</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label class="filter">
+      <input type="checkbox" id="preprint-filter" checked>
+      Include preprints
+    </label>
+  </div>
+
+  <section>
+    <div class="controls">
+      <h2 style="margin:0">Citations</h2>
+      <div class="segmented" id="citation-view-toggle">
+        <button data-view="peryear" class="active">Per year</button>
+        <button data-view="cumulative">Cumulative</button>
+      </div>
+    </div>
+    <div class="chart-card">
+      <svg class="chart" id="citations-chart" viewBox="0 0 700 220"></svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Papers per year</h2>
+    <div class="chart-card">
+      <svg class="chart" id="papers-chart" viewBox="0 0 700 220"></svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Papers</h2>
+    <div class="papers" id="papers-list"></div>
+  </section>
+
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const root = document.documentElement;
+const themeToggle = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) root.setAttribute('data-theme', savedTheme);
+
+function currentTheme() {
+  if (root.getAttribute('data-theme')) return root.getAttribute('data-theme');
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+themeToggle.addEventListener('click', () => {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+});
+
+const tooltip = document.getElementById('tooltip');
+function showTooltip(evt, text) {
+  tooltip.textContent = text;
+  tooltip.style.left = evt.clientX + 'px';
+  tooltip.style.top = evt.clientY + 'px';
+  tooltip.style.opacity = '1';
+}
+function moveTooltip(evt) {
+  tooltip.style.left = evt.clientX + 'px';
+  tooltip.style.top = evt.clientY + 'px';
+}
+function hideTooltip() {
+  tooltip.style.opacity = '0';
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function el(name, attrs) {
+  const node = document.createElementNS(SVG_NS, name);
+  for (const k in attrs) node.setAttribute(k, attrs[k]);
+  return node;
+}
+
+function drawBarChart(svg, years, values, tooltipLabel) {
+  svg.innerHTML = '';
+  const W = 700, H = 220, padL = 30, padB = 26, padT = 10, padR = 10;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const max = Math.max(1, ...values);
+  const n = years.length;
+  const gap = innerW / n * 0.25;
+  const barW = innerW / n - gap;
+
+  years.forEach((year, i) => {
+    const v = values[i];
+    const barH = (v / max) * innerH;
+    const x = padL + i * (innerW / n) + gap / 2;
+    const y = padT + innerH - barH;
+    const rect = el('rect', { x, y, width: barW, height: Math.max(barH, v > 0 ? 2 : 0), class: 'bar' });
+    rect.addEventListener('mouseenter', (e) => showTooltip(e, `${year}: ${tooltipLabel(v)}`));
+    rect.addEventListener('mousemove', moveTooltip);
+    rect.addEventListener('mouseleave', hideTooltip);
+    svg.appendChild(rect);
+
+    if (n <= 12 || i % Math.ceil(n / 12) === 0) {
+      const label = el('text', { x: x + barW / 2, y: H - 6, 'text-anchor': 'middle', class: 'axis-label' });
+      label.textContent = year;
+      svg.appendChild(label);
+    }
+  });
+}
+
+function drawLineChart(svg, years, values, tooltipLabel) {
+  svg.innerHTML = '';
+  const W = 700, H = 220, padL = 30, padB = 26, padT = 10, padR = 10;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const max = Math.max(1, ...values);
+  const n = years.length;
+  const stepX = n > 1 ? innerW / (n - 1) : 0;
+
+  const points = years.map((year, i) => {
+    const x = padL + i * stepX;
+    const y = padT + innerH - (values[i] / max) * innerH;
+    return { x, y, year, v: values[i] };
+  });
+
+  const d = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ',' + p.y).join(' ');
+  svg.appendChild(el('path', { d, class: 'line-path' }));
+
+  points.forEach((p, i) => {
+    const dot = el('circle', { cx: p.x, cy: p.y, r: 4, class: 'dot' });
+    dot.addEventListener('mouseenter', (e) => showTooltip(e, `${p.year}: ${tooltipLabel(p.v)}`));
+    dot.addEventListener('mousemove', moveTooltip);
+    dot.addEventListener('mouseleave', hideTooltip);
+    svg.appendChild(dot);
+
+    if (n <= 12 || i % Math.ceil(n / 12) === 0) {
+      const label = el('text', { x: p.x, y: H - 6, 'text-anchor': 'middle', class: 'axis-label' });
+      label.textContent = p.year;
+      svg.appendChild(label);
+    }
+  });
+}
+
+let citationView = 'peryear';
+let papers = [];
+
+function render() {
+  const includePreprints = document.getElementById('preprint-filter').checked;
+  const filtered = papers.filter(p => includePreprints || p.type !== 'preprint');
+
+  document.getElementById('stat-papers').textContent = filtered.length;
+  document.getElementById('stat-citations').textContent =
+    filtered.reduce((sum, p) => sum + p.cited_by_count, 0);
+
+  const pubYears = filtered.map(p => p.year).filter(Boolean);
+  const citedYears = filtered.flatMap(p => Object.keys(p.counts_by_year).map(Number));
+  const allYears = [...new Set([...pubYears, ...citedYears])].sort((a, b) => a - b);
+  const minYear = allYears[0], maxYear = allYears[allYears.length - 1];
+  const years = [];
+  for (let y = minYear; y <= maxYear; y++) years.push(y);
+
+  const citationsPerYear = years.map(y =>
+    filtered.reduce((sum, p) => sum + (p.counts_by_year[y] || 0), 0)
+  );
+  const cumulativeCitations = [];
+  citationsPerYear.reduce((acc, v, i) => (cumulativeCitations[i] = acc + v), 0);
+
+  const papersPerYear = years.map(y => filtered.filter(p => p.year === y).length);
+
+  const citationsSvg = document.getElementById('citations-chart');
+  if (citationView === 'peryear') {
+    drawBarChart(citationsSvg, years, citationsPerYear, v => `${v} citation${v === 1 ? '' : 's'}`);
+  } else {
+    drawLineChart(citationsSvg, years, cumulativeCitations, v => `${v} total citation${v === 1 ? '' : 's'}`);
+  }
+
+  drawBarChart(document.getElementById('papers-chart'), years, papersPerYear,
+    v => `${v} paper${v === 1 ? '' : 's'}`);
+
+  const list = document.getElementById('papers-list');
+  list.innerHTML = '';
+  filtered
+    .slice()
+    .sort((a, b) => (b.year || 0) - (a.year || 0))
+    .forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'paper';
+      const preprintBadge = p.type === 'preprint' ? '<span class="badge">preprint</span>' : '';
+      item.innerHTML = `
+        <a class="paper-title" href="${p.link || '#'}" target="_blank" rel="noopener">${p.title}</a>${preprintBadge}
+        <div class="paper-meta">${p.venue || 'Unknown venue'} · ${p.year || ''} · ${p.cited_by_count} citation${p.cited_by_count === 1 ? '' : 's'}</div>
+      `;
+      list.appendChild(item);
+    });
+}
+
+document.getElementById('citation-view-toggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  citationView = btn.dataset.view;
+  document.querySelectorAll('#citation-view-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+  render();
+});
+document.getElementById('preprint-filter').addEventListener('change', render);
+
+fetch('papers.json')
+  .then(r => r.json())
+  .then(data => { papers = data; render(); });
+</script>
+</body>
+</html>

@@ -209,7 +209,7 @@
   },
   {
     "id": "https://openalex.org/W4410140280",
-    "title": "Patient-derived models of <i>UBA5-</i> associated encephalopathy identify defects in neurodevelopment and highlight potential therapeutic avenues",
+    "title": "Patient-derived models of <em>UBA5-</em> associated encephalopathy identify defects in neurodevelopment and highlight potential therapeutic avenues",
     "year": 2025,
     "type": "article",
     "venue": "Science Translational Medicine",
@@ -237,7 +237,7 @@
   },
   {
     "id": "https://openalex.org/W4416357288",
-    "title": "Pathogenic Variants in <i>RNU2\u20102</i> , a Non\u2010coding Spliceosomal <scp>RNA</scp> , Cause a Distinctive Developmental and Epileptic Encephalopathy",
+    "title": "Pathogenic Variants in <em>RNU2\u20102</em> , a Non\u2010coding Spliceosomal RNA , Cause a Distinctive Developmental and Epileptic Encephalopathy",
     "year": 2025,
     "type": "article",
     "venue": "Annals of Neurology",
@@ -272,7 +272,7 @@
   },
   {
     "id": "https://openalex.org/W4407350845",
-    "title": "<scp><i>SCN1A</i></scp> pathogenic variants do not have a distinctive blood\u2010derived <scp>DNA</scp> methylation signature",
+    "title": "<em>SCN1A</em> pathogenic variants do not have a distinctive blood\u2010derived DNA methylation signature",
     "year": 2025,
     "type": "article",
     "venue": "Epilepsia",

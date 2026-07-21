@@ -2,6 +2,7 @@
 """Fetch all works for an ORCID from OpenAlex, save papers.json plus a review spreadsheet."""
 import csv
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -31,6 +32,15 @@ EXCLUDE_IDS = {
     "https://openalex.org/W4402267054",  # AACR conference abstract, restates a listed paper
     "https://openalex.org/W3169989224",  # journal cover-art credit, not a research paper
 }
+
+
+def clean_title(title):
+    """OpenAlex titles carry markup (<i>, <scp>, ...) for italics/small-caps.
+    Keep italics as <em>, strip everything else so odd tags don't leak onto the page."""
+    if not title:
+        return title
+    title = title.replace("<i>", "<em>").replace("</i>", "</em>")
+    return re.sub(r"</?(?!em\b)[a-zA-Z][^>]*>", "", title)
 
 
 def fetch_page(cursor):
@@ -65,7 +75,7 @@ def main():
         counts_by_year = {c["year"]: c["cited_by_count"] for c in w.get("counts_by_year", [])}
         papers.append({
             "id": w["id"],
-            "title": w.get("title"),
+            "title": clean_title(w.get("title")),
             "year": w.get("publication_year"),
             "type": w.get("type"),
             "venue": source.get("display_name"),
