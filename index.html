@@ -152,12 +152,12 @@
     padding: 1.1rem 1.1rem 0.6rem;
   }
   svg.chart { width: 100%; height: auto; overflow: visible; }
-  .bar { fill: var(--accent); cursor: pointer; }
-  .bar:hover { fill: var(--text); }
+  .hit { cursor: pointer; }
+  .hit:hover + .bar { fill: var(--text); }
+  .bar { fill: var(--accent); pointer-events: none; }
   .bar.selected { fill: var(--text); }
   .line-path { fill: none; stroke: var(--accent); stroke-width: 2; }
-  .dot { fill: var(--accent); cursor: pointer; }
-  .dot:hover { fill: var(--text); }
+  .dot { fill: var(--accent); }
   .dot.selected { fill: var(--text); r: 6; }
   .axis-label { fill: var(--text-muted); font-size: 11px; }
   .axis-label.selected { fill: var(--text); font-weight: 600; }
@@ -329,17 +329,27 @@ function drawBarChart(svg, years, values, tooltipLabel, selectedYear, onSelect) 
   years.forEach((year, i) => {
     const v = values[i];
     const barH = (v / max) * innerH;
-    const x = padL + i * (innerW / n) + gap / 2;
+    const colX = padL + i * (innerW / n);
+    const x = colX + gap / 2;
     const y = padT + innerH - barH;
     const isSelected = year === selectedYear;
+
+    // Full-height transparent hit area so the whole column (and the space above
+    // a short bar) is clickable, not just the coloured bar itself.
+    const hit = el('rect', {
+      x: colX, y: padT, width: innerW / n, height: innerH + padB,
+      class: 'hit', fill: 'transparent',
+    });
+    hit.addEventListener('mouseenter', (e) => showTooltip(e, `${year}: ${tooltipLabel(v)}`));
+    hit.addEventListener('mousemove', moveTooltip);
+    hit.addEventListener('mouseleave', hideTooltip);
+    hit.addEventListener('click', () => onSelect(year));
+    svg.appendChild(hit);
+
     const rect = el('rect', {
       x, y, width: barW, height: Math.max(barH, v > 0 ? 2 : 0),
       class: 'bar' + (isSelected ? ' selected' : ''),
     });
-    rect.addEventListener('mouseenter', (e) => showTooltip(e, `${year}: ${tooltipLabel(v)}`));
-    rect.addEventListener('mousemove', moveTooltip);
-    rect.addEventListener('mouseleave', hideTooltip);
-    rect.addEventListener('click', () => onSelect(year));
     svg.appendChild(rect);
 
     if (n <= 12 || i % Math.ceil(n / 12) === 0) {
@@ -367,16 +377,26 @@ function drawLineChart(svg, years, values, tooltipLabel, selectedYear, onSelect)
     return { x, y, year, v: values[i] };
   });
 
+  // Full-height transparent hit bands so the whole column is clickable.
+  const bandW = n > 1 ? innerW / (n - 1) : innerW;
+  points.forEach((p) => {
+    const hit = el('rect', {
+      x: p.x - bandW / 2, y: padT, width: bandW, height: innerH + padB,
+      class: 'hit', fill: 'transparent',
+    });
+    hit.addEventListener('mouseenter', (e) => showTooltip(e, `${p.year}: ${tooltipLabel(p.v)}`));
+    hit.addEventListener('mousemove', moveTooltip);
+    hit.addEventListener('mouseleave', hideTooltip);
+    hit.addEventListener('click', () => onSelect(p.year));
+    svg.appendChild(hit);
+  });
+
   const d = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ',' + p.y).join(' ');
-  svg.appendChild(el('path', { d, class: 'line-path' }));
+  svg.appendChild(el('path', { d, class: 'line-path', 'pointer-events': 'none' }));
 
   points.forEach((p, i) => {
     const isSelected = p.year === selectedYear;
-    const dot = el('circle', { cx: p.x, cy: p.y, r: isSelected ? 6 : 4, class: 'dot' + (isSelected ? ' selected' : '') });
-    dot.addEventListener('mouseenter', (e) => showTooltip(e, `${p.year}: ${tooltipLabel(p.v)}`));
-    dot.addEventListener('mousemove', moveTooltip);
-    dot.addEventListener('mouseleave', hideTooltip);
-    dot.addEventListener('click', () => onSelect(p.year));
+    const dot = el('circle', { cx: p.x, cy: p.y, r: isSelected ? 6 : 4, class: 'dot' + (isSelected ? ' selected' : ''), 'pointer-events': 'none' });
     svg.appendChild(dot);
 
     if (n <= 12 || i % Math.ceil(n / 12) === 0) {
