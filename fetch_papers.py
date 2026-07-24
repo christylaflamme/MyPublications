@@ -77,6 +77,7 @@ def main():
             "id": w["id"],
             "title": clean_title(w.get("title")),
             "year": w.get("publication_year"),
+            "date": w.get("publication_date"),
             "type": w.get("type"),
             "venue": source.get("display_name"),
             "link": w.get("doi") or location.get("landing_page_url"),
@@ -95,17 +96,19 @@ def main():
 
     drop_ids = EXCLUDE_IDS | set(MERGE_PREPRINT_INTO_PUBLISHED.keys())
     papers = [p for p in papers if p["id"] not in drop_ids]
-    papers.sort(key=lambda p: (p["year"] or 0), reverse=True)
+    # Sort by actual publication date so same-year papers land newest-first too,
+    # not just grouped by year with an arbitrary order within the year.
+    papers.sort(key=lambda p: p["date"] or str(p["year"] or 0), reverse=True)
 
     with open("papers.json", "w") as f:
         json.dump(papers, f, indent=2)
 
     with open("papers_review.csv", "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["title", "year", "venue", "type", "co-authors", "cited_by_count", "link"])
+        writer.writerow(["title", "date", "year", "venue", "type", "co-authors", "cited_by_count", "link"])
         for p in papers:
             writer.writerow([
-                p["title"], p["year"], p["venue"], p["type"],
+                p["title"], p["date"], p["year"], p["venue"], p["type"],
                 "; ".join(p["authors"]), p["cited_by_count"], p["link"],
             ])
 

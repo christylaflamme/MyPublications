@@ -627,7 +627,7 @@ function render() {
   filtered
     .filter(p => !selectedYear || p.year === selectedYear)
     .slice()
-    .sort((a, b) => (b.year || 0) - (a.year || 0))
+    .sort((a, b) => (b.date || String(b.year || 0)).localeCompare(a.date || String(a.year || 0)))
     .forEach(p => {
       const item = document.createElement('div');
       item.className = 'paper';
